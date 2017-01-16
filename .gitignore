@@ -4,6 +4,7 @@ build/*
 install/*
 stats/*
 !.gitignore
+!.cfg
 .catkin_workspace
 mha_stats.csv
 fbp_tests.yaml
