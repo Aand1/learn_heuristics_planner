@@ -99,11 +99,16 @@ int planxythetalat(const char* envCfgFilename, const char* motPrimFilename, cons
     planner->set_initialsolution_eps(initialEpsilon);
     planner->set_search_mode(bsearchuntilfirstsolution);
 
+    environment_navxythetalat.InitViz();
+    environment_navxythetalat.VisualizeMap();
+
     // plan
     printf("start planning...\n");
     bRet = planner->replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
     printf("size of solution=%d\n", (unsigned int)solution_stateIDs_V.size());
+
+    environment_navxythetalat.VisualizePath(solution_stateIDs_V);
 
     environment_navxythetalat.PrintTimeStat(stdout);
 
@@ -131,13 +136,18 @@ int main(int argc, char *argv[])
     const char* motPrimFilename;
     const char* eps;
 
+    ros::NodeHandle ph("~");
+    std::string r_config_path, r_prim_path;
+    ph.getParam("config_path", r_config_path);
+    ph.getParam("prim_path", r_prim_path);
+
     std::string lib_path = ros::package::getPath("sbpl_lh");
-    std::string default_config_path = lib_path + "/env_examples/nav3d/env2.cfg"; 
-    std::string default_prim_path = lib_path + "/matlab/mprim/kcar.mprim"; 
+    std::string config_path = lib_path + r_config_path; 
+    std::string prim_path = lib_path + r_prim_path; 
 
     if(argc <= 1) {
-        configFilename = default_config_path.c_str();
-        motPrimFilename = default_prim_path.c_str();
+        configFilename = config_path.c_str();
+        motPrimFilename = prim_path.c_str();
     }
     else {
         configFilename = argv[1];

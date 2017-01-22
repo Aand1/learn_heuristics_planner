@@ -76,9 +76,6 @@ EnvironmentNAVXYTHETALATTICE::EnvironmentNAVXYTHETALATTICE()
     EnvNAVXYTHETALATCfg.Grid2D = NULL;
     EnvNAVXYTHETALATCfg.ActionsV = NULL;
     EnvNAVXYTHETALATCfg.PredActionsV = NULL;
-
-    //initialize visualization
-    InitViz();
 }
 
 EnvironmentNAVXYTHETALATTICE::~EnvironmentNAVXYTHETALATTICE()
@@ -452,10 +449,7 @@ void EnvironmentNAVXYTHETALATTICE::ReadConfiguration(FILE* fCfg)
         EnvNAVXYTHETALATCfg.Grid2D[x] = new unsigned char[EnvNAVXYTHETALATCfg.EnvHeight_c];
     }
 
-    //assign the map params
-    map.info.resolution = EnvNAVXYTHETALATCfg.cellsize_m;
-    map.info.width = EnvNAVXYTHETALATCfg.EnvWidth_c;
-    map.info.height = EnvNAVXYTHETALATCfg.EnvHeight_c;
+
 
     //environment:
     if (fscanf(fCfg, "%s", sTemp) != 1) {
@@ -469,11 +463,7 @@ void EnvironmentNAVXYTHETALATTICE::ReadConfiguration(FILE* fCfg)
                 throw new SBPL_Exception();
             }
             EnvNAVXYTHETALATCfg.Grid2D[x][y] = dTemp;
-            (map.data).push_back(100*dTemp);
         }
-
-    // viz the env
-    VisualizeMap();
 }
 
 bool EnvironmentNAVXYTHETALATTICE::ReadinCell(sbpl_xy_theta_cell_t* cell, FILE* fIn)
@@ -1933,12 +1923,21 @@ int EnvironmentNAVXYTHETALATTICE::GetEnvParameter(const char* parameter)
 *********************** Visualization ****************************
 ******************************************************************/
 
-void EnvironmentNAVXYTHETALATTICE::InitViz() {
+void EnvironmentNAVXYTHETALAT::InitViz() {
+
     map.header.stamp = ros::Time::now();
     map.header.frame_id = "map";
     map.info.origin.orientation.w = 1.0;
+    map.info.resolution = EnvNAVXYTHETALATCfg.cellsize_m;
+    map.info.width = EnvNAVXYTHETALATCfg.EnvWidth_c;
+    map.info.height = EnvNAVXYTHETALATCfg.EnvHeight_c;
 
-    map_publisher = nodeH.advertise<nav_msgs::OccupancyGrid>("viz_map", 1000);
+    for (int y = 0; y < EnvNAVXYTHETALATCfg.EnvHeight_c; y++) {
+        for (int x = 0; x < EnvNAVXYTHETALATCfg.EnvWidth_c; x++) {
+            (map.data).push_back(100*EnvNAVXYTHETALATCfg.Grid2D[x][y]);
+        }
+    }
+    map_publisher = nh.advertise<nav_msgs::OccupancyGrid>("viz_map", 1000);
 
     expansions.header.stamp = ros::Time::now();
     expansions.header.frame_id = "map";
@@ -1947,29 +1946,53 @@ void EnvironmentNAVXYTHETALATTICE::InitViz() {
     expansions.pose.orientation.w = 1.0;
     expansions.id = 0;
     expansions.type = visualization_msgs::Marker::POINTS;
-    expansions.scale.x = 0.1;
-    expansions.scale.y = 0.1;
+    expansions.scale.x = 0.05;
+    expansions.scale.y = 0.05;
     expansions.color.b = 1.0f;
     expansions.color.a = 1.0;
-    // expansions.lifetime = ros::Duration(0.1);
+    exp_publisher = nh.advertise<visualization_msgs::Marker>("viz_exp", 1000);
 
-    exp_publisher = nodeH.advertise<visualization_msgs::Marker>("viz_exp", 1000);
+    path.header.stamp = ros::Time::now();
+    path.header.frame_id = "map";
+    path_publisher = nh.advertise<nav_msgs::Path>("viz_path", 1000);
 }
 
-void EnvironmentNAVXYTHETALATTICE::VisualizeMap() {    
+void EnvironmentNAVXYTHETALAT::VisualizeMap() {  
+    if(!m_use_visualization) return;  
+    
     ros::Duration(1.0).sleep();
     map_publisher.publish(map);
 }
 
-void EnvironmentNAVXYTHETALATTICE::VisualizeExpansions(int x, int y) {    
+void EnvironmentNAVXYTHETALAT::VisualizeExpansions(int x, int y) {
+    if(!m_use_visualization) return;  
+
     geometry_msgs::Point p;
-    p.x = x*EnvNAVXYTHETALATCfg.cellsize_m;
-    p.y = y*EnvNAVXYTHETALATCfg.cellsize_m;
-    p.z = 0.1;
+    p.x = DISCXY2CONT(x, EnvNAVXYTHETALATCfg.cellsize_m);
+    p.y = DISCXY2CONT(y, EnvNAVXYTHETALATCfg.cellsize_m);
+    p.z = 0.1; // random number 
     expansions.points.push_back(p);
 
-    ros::Duration(0.01).sleep();
     exp_publisher.publish(expansions);
+}
+
+void EnvironmentNAVXYTHETALAT::VisualizePath(std::vector<int> solution_state_ids) {
+    // if(!m_use_visualization) return;  
+
+    for(int sid : solution_state_ids) {
+        int x, y, theta;
+        GetCoordFromState(sid, x, y, theta);
+
+        geometry_msgs::PoseStamped pose_stamped;
+        pose_stamped.pose.position.x = DISCXY2CONT(x, EnvNAVXYTHETALATCfg.cellsize_m);
+        pose_stamped.pose.position.y = DISCXY2CONT(y, EnvNAVXYTHETALATCfg.cellsize_m);
+        pose_stamped.pose.position.z = 0.2; // random number 
+        pose_stamped.pose.orientation.w = 1.0;
+
+        (path.poses).push_back(pose_stamped);
+    }
+
+    path_publisher.publish(path);
 }
 
 //******************************************************************************
@@ -2207,12 +2230,18 @@ void EnvironmentNAVXYTHETALAT::PrintState(int stateID, bool bVerbose, FILE* fOut
         SBPL_FPRINTF(fOut, "the state is a goal state\n");
     }
 
-    if (bVerbose)
+    if (bVerbose) {
         SBPL_FPRINTF(fOut, "X=%d Y=%d Theta=%d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta);
-    else
+        printf("State: %d, X=%d Y=%d Theta=%d\n", stateID, HashEntry->X, HashEntry->Y, HashEntry->Theta);
+    }
+    else{
         SBPL_FPRINTF(fOut, "%.3f %.3f %.3f\n", DISCXY2CONT(HashEntry->X, EnvNAVXYTHETALATCfg.cellsize_m),
                      DISCXY2CONT(HashEntry->Y, EnvNAVXYTHETALATCfg.cellsize_m),
                      DiscTheta2Cont(HashEntry->Theta, EnvNAVXYTHETALATCfg.NumThetaDirs));
+        printf("State: %d, x : %.3f, y : %.3f, z: %.3f\n", stateID, DISCXY2CONT(HashEntry->X, EnvNAVXYTHETALATCfg.cellsize_m),
+                     DISCXY2CONT(HashEntry->Y, EnvNAVXYTHETALATCfg.cellsize_m),
+                     DiscTheta2Cont(HashEntry->Theta, EnvNAVXYTHETALATCfg.NumThetaDirs));
+    }
 }
 
 EnvNAVXYTHETALATHashEntry_t* EnvironmentNAVXYTHETALAT::GetHashEntry_lookup(int X, int Y, int Theta)
@@ -2382,7 +2411,7 @@ void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV,
     EnvNAVXYTHETALATHashEntry_t* HashEntry = StateID2CoordTable[SourceStateID];
 
     // Viz expanded state
-    VisualizeExpansions(HashEntry->X, HashEntry->Y);
+    // VisualizeExpansions(HashEntry->X, HashEntry->Y);
 
     //iterate through actions
     for (aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++) {
@@ -2729,7 +2758,8 @@ int EnvironmentNAVXYTHETALAT::GetGoalHeuristic(int stateID)
                                                                            EnvNAVXYTHETALATCfg.EndY_c));
 
     //define this function if it is used in the planner (heuristic backward search would use it)
-    return (int)(((double)__max(h2D, hEuclid)) / EnvNAVXYTHETALATCfg.nominalvel_mpersecs);
+    // return (int)(((double)__max(h2D, hEuclid)) / EnvNAVXYTHETALATCfg.nominalvel_mpersecs);
+    return (int)(((double)hEuclid) / EnvNAVXYTHETALATCfg.nominalvel_mpersecs);
 }
 
 int EnvironmentNAVXYTHETALAT::GetStartHeuristic(int stateID)

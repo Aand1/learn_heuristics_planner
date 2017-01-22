@@ -39,6 +39,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
 
 //eight-connected grid
@@ -417,10 +418,11 @@ public:
      */
     virtual void PrintVars() { }
 
-    virtual void InitViz();
+    virtual void InitViz() { }
 
-    virtual void VisualizeMap();
-    virtual void VisualizeExpansions(int x, int y);
+    virtual void VisualizeMap() { }
+    virtual void VisualizeExpansions(int x, int y) { }
+    virtual void VisualizePath(std::vector<int> solution_state_ids) { }
 
 protected:
     virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
@@ -437,13 +439,6 @@ protected:
     bool bNeedtoRecomputeGoalHeuristics; //set whenever grid2Dsearchfromgoal needs to be re-executed
     SBPL2DGridSearch* grid2Dsearchfromstart; //computes h-values that estimate distances from start x,y to all cells
     SBPL2DGridSearch* grid2Dsearchfromgoal; //computes h-values that estimate distances to goal x,y from all cells
-
-    //visualization
-    ros::NodeHandle nodeH;  
-    ros::Publisher map_publisher;
-    ros::Publisher exp_publisher;
-    nav_msgs::OccupancyGrid map;
-    visualization_msgs::Marker expansions;
 
     virtual void ReadConfiguration(FILE* fCfg);
 
@@ -506,6 +501,8 @@ public:
         HashTableSize = 0;
         Coord2StateIDHashTable = NULL;
         Coord2StateIDHashTable_lookup = NULL;
+        ros::NodeHandle ph("~");
+        ph.param("use_visualization", m_use_visualization, true);
     }
 
     ~EnvironmentNAVXYTHETALAT();
@@ -620,6 +617,12 @@ public:
      */
     virtual void PrintVars() { }
 
+    virtual void InitViz();
+
+    virtual void VisualizeMap();
+    virtual void VisualizeExpansions(int x, int y);
+    virtual void VisualizePath(std::vector<int> solution_state_ids);
+
 protected:
     //hash table of size x_size*y_size. Maps from coords to stateId
     int HashTableSize;
@@ -639,6 +642,16 @@ protected:
     //pointers to functions
     EnvNAVXYTHETALATHashEntry_t* (EnvironmentNAVXYTHETALAT::*GetHashEntry)(int X, int Y, int Theta);
     EnvNAVXYTHETALATHashEntry_t* (EnvironmentNAVXYTHETALAT::*CreateNewHashEntry)(int X, int Y, int Theta);
+
+    //visualization
+    ros::NodeHandle nh;  
+    ros::Publisher map_publisher;
+    ros::Publisher exp_publisher;
+    ros::Publisher path_publisher;
+    nav_msgs::OccupancyGrid map;
+    visualization_msgs::Marker expansions;
+    nav_msgs::Path path;
+    bool m_use_visualization;
 
     virtual void InitializeEnvironment();
 
