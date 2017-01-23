@@ -45,7 +45,7 @@ if UNICYCLE_MPRIM_16DEGS == 1
     numberofangles = 16; %preferably a power of 2, definitely multiple of 8
     numberofprimsperangle = 18;
 
-    multfact = 4;
+    multfact = 50;
     %multipliers (multiplier is used as costmult*cost)
     costmult = 1*multfact;
     turninplacecostmult = 1;%20;

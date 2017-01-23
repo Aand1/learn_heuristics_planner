@@ -1,7 +1,7 @@
 <launch>
     <node name="kinematic_car" pkg="sbpl_lh" type="test_kinematic" required="true" output="screen">
         <param name="use_visualization" type ="bool" value="true"/>
-        <param name="config_path" value="/env_examples/nav3d/env3.cfg"/>
+        <param name="config_path" value="/env_examples/nav3d/env4.cfg"/>
         <param name="prim_path" value="/matlab/mprim/kcar.mprim"/>
     </node>
 </launch>

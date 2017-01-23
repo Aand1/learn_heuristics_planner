@@ -1970,7 +1970,7 @@ void EnvironmentNAVXYTHETALAT::VisualizeExpansions(int x, int y) {
     geometry_msgs::Point p;
     p.x = DISCXY2CONT(x, EnvNAVXYTHETALATCfg.cellsize_m);
     p.y = DISCXY2CONT(y, EnvNAVXYTHETALATCfg.cellsize_m);
-    p.z = 0.1; // random number 
+    p.z = 0.0; // random number 
     expansions.points.push_back(p);
 
     exp_publisher.publish(expansions);
@@ -1986,7 +1986,7 @@ void EnvironmentNAVXYTHETALAT::VisualizePath(std::vector<int> solution_state_ids
         geometry_msgs::PoseStamped pose_stamped;
         pose_stamped.pose.position.x = DISCXY2CONT(x, EnvNAVXYTHETALATCfg.cellsize_m);
         pose_stamped.pose.position.y = DISCXY2CONT(y, EnvNAVXYTHETALATCfg.cellsize_m);
-        pose_stamped.pose.position.z = 0.2; // random number 
+        pose_stamped.pose.position.z = 0.0; // random number 
         pose_stamped.pose.orientation.w = 1.0;
 
         (path.poses).push_back(pose_stamped);
@@ -2411,7 +2411,7 @@ void EnvironmentNAVXYTHETALAT::GetSuccs(int SourceStateID, vector<int>* SuccIDV,
     EnvNAVXYTHETALATHashEntry_t* HashEntry = StateID2CoordTable[SourceStateID];
 
     // Viz expanded state
-    // VisualizeExpansions(HashEntry->X, HashEntry->Y);
+    VisualizeExpansions(HashEntry->X, HashEntry->Y);
 
     //iterate through actions
     for (aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++) {

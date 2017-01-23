@@ -50,8 +50,8 @@ int planxythetalat(const char* envCfgFilename, const char* motPrimFilename, cons
     // set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
     vector<sbpl_2Dpt_t> perimeterptsV;
     sbpl_2Dpt_t pt_m;
-    double halfwidth = 0.02;
-    double halflength = 0.02;
+    double halfwidth = 0.1;
+    double halflength = 0.1;
     pt_m.x = -halflength;
     pt_m.y = -halfwidth;
     perimeterptsV.push_back(pt_m);
@@ -65,7 +65,7 @@ int planxythetalat(const char* envCfgFilename, const char* motPrimFilename, cons
     pt_m.y = halfwidth;
     perimeterptsV.push_back(pt_m);
 
-    perimeterptsV.clear();
+    // perimeterptsV.clear();
 
     // Initialize Environment (should be called before initializing anything else)
     EnvironmentNAVXYTHETALAT environment_navxythetalat;
