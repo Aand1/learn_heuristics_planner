@@ -9,13 +9,15 @@ set(CMAKE_CXX_FLAGS "-std=c++0x")
 add_definitions(-DROS)
 
 find_package( PkgConfig REQUIRED)
+find_package( ompl )
 pkg_check_modules( gsl REQUIRED gsl )
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include
+                    ${ompl_INCLUDE_DIRS})
 
 catkin_package(
   CATKIN_DEPENDS roscpp roslib
-  DEPENDS gsl
+  DEPENDS gsl ompl
   INCLUDE_DIRS include
   LIBRARIES sbpl_ros
   )
@@ -36,13 +38,14 @@ add_library(sbpl_ros
   src/planners/mhaplanner.cpp
   src/planners/improved_mha_planner.cpp
   src/planners/lazyARA.cpp
+  src/planners/ompl_planner.cpp
   src/utils/heap.cpp
   src/utils/mdp.cpp
   src/utils/utils.cpp
   src/utils/2Dgridsearch.cpp
   src/utils/config.cpp	
   )
-target_link_libraries(sbpl_ros ${gsl_LIBRARIES} ${catkin_LIBRARIES})
+target_link_libraries(sbpl_ros ${gsl_LIBRARIES} ${catkin_LIBRARIES} ${OMPL_LIBRARIES})
 
 # Download needed data file
 # download_test_data(http://pr.willowgarage.com/data/sbpl/env_examples/nav2d/willow-25mm-inflated-env.cfg 

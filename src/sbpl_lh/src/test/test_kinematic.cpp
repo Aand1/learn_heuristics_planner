@@ -128,6 +128,29 @@ int planxythetalat(const char* envCfgFilename, const char* motPrimFilename, cons
     return bRet;
 }
 
+int planxythetacont(const char* envCfgFilename)
+{
+    int planner_id = 0;
+    double allocated_time_secs = 100.0;
+
+    OMPLPlanner ompl_planner(planner_id, allocated_time_secs);
+
+    if (!ompl_planner.initEnv(envCfgFilename)) {
+        printf("ERROR: InitializeEnv failed\n");
+        throw new SBPL_Exception();
+    }
+
+    if (!ompl_planner.initOMPL()) {
+        printf("ERROR: Initializing OMPL failed\n");
+        throw new SBPL_Exception();
+    }
+
+    bool bRet = ompl_planner.plan();
+
+    return bRet;
+}
+
+
 int main(int argc, char *argv[])
 {
     ros::init(argc, argv, "kinematic_test");
@@ -155,7 +178,15 @@ int main(int argc, char *argv[])
         eps = argv[3];
     }
 
-    const int plannerRes = planxythetalat(configFilename, motPrimFilename, eps);
+    bool use_ompl;
+    ph.getParam("use_ompl", use_ompl);
+
+    int plannerRes;
+
+    if(!use_ompl)
+        plannerRes = planxythetalat(configFilename, motPrimFilename, eps);
+    else
+        plannerRes = planxythetacont(configFilename);        
 
     return plannerRes;
 }

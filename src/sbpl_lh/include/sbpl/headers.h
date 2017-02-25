@@ -61,6 +61,7 @@
 #include <sbpl/planners/lazyARA.h>
 #include <sbpl/planners/mhaplanner.h>
 #include <sbpl/planners/improved_mha_planner.h>
+#include <sbpl/planners/ompl_planner.h>
 #include <sbpl/utils/2Dgridsearch.h>
 #include <sbpl/utils/heap.h>
 #include <sbpl/utils/list.h>
