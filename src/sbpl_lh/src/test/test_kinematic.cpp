@@ -128,9 +128,9 @@ int planxythetalat(const char* envCfgFilename, const char* motPrimFilename, cons
     return bRet;
 }
 
-int planxythetacont(const char* envCfgFilename)
+int planxythetacont(const char* envCfgFilename, int ompl_id)
 {
-    int planner_id = 0;
+    int planner_id = ompl_id;
     double allocated_time_secs = 100.0;
 
     OMPLPlanner ompl_planner(planner_id, allocated_time_secs);
@@ -179,14 +179,17 @@ int main(int argc, char *argv[])
     }
 
     bool use_ompl;
-    ph.getParam("use_ompl", use_ompl);
+    int ompl_id;
+
+    ph.getParam("use_ompl", use_ompl);  
+    ph.getParam("ompl_id", ompl_id);
 
     int plannerRes;
 
     if(!use_ompl)
         plannerRes = planxythetalat(configFilename, motPrimFilename, eps);
     else
-        plannerRes = planxythetacont(configFilename);        
+        plannerRes = planxythetacont(configFilename, ompl_id);        
 
     return plannerRes;
 }
