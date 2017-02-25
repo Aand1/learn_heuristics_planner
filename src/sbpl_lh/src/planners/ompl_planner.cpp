@@ -414,14 +414,22 @@ bool OMPLPlanner::createStartGoal(SE2State& ompl_start, SE2State& ompl_goal) {
 	ompl_start->setXY(m_env.start_x, m_env.start_y);
 	ompl_start->setYaw(angles::normalize_angle(m_env.start_theta));
 
-    ROS_INFO("Start : %f %f %f", ompl_start->getX(),
+    if(!m_collision_checker->isValid(ompl_start.get())) {
+        return false;
+    }
+
+    ROS_INFO("Start Valid : %f %f %f", ompl_start->getX(),
                                  ompl_start->getY(),
                                  ompl_start->getYaw() );
 
 	ompl_goal->setXY(m_env.goal_x, m_env.goal_y);
 	ompl_goal->setYaw(angles::normalize_angle(m_env.goal_theta));
 
-    ROS_INFO("Goal : %f %f %f", ompl_goal->getX(),
+    if(!m_collision_checker->isValid(ompl_goal.get())) {
+        return false;
+    }
+
+    ROS_INFO("Goal Valid : %f %f %f", ompl_goal->getX(),
                                  ompl_goal->getY(),
                                  ompl_goal->getYaw() );
 
