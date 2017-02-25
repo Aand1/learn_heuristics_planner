@@ -1,4 +1,10 @@
 #pragma once
+
+// Standard includes
+#include <memory>
+#include <vector>
+
+// OMPL includes
 #include <ompl/base/Cost.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
 #include <ompl/geometric/SimpleSetup.h>
@@ -12,9 +18,9 @@
 #include <ompl/geometric/planners/prm/PRM.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/base/goals/GoalState.h>
-#include <memory>
-#include <vector>
+#include <ompl/base/samplers/UniformValidStateSampler.h>
 
+// SBPL includes
 #include <sbpl/headers.h>
 
 // ROS includes
@@ -114,6 +120,7 @@ public:
 	bool initViz();
 	bool plan();
 	bool createStartGoal(SE2State& ompl_start, SE2State& ompl_goal);
+	bool sampleStartGoal(SE2State& ompl_start, SE2State& ompl_goal);
 	void printState(const ompl::base::State* state);
 	void visualizeMap();
 	void visualizePath(ompl::geometric::PathGeometric& geo_path);
@@ -129,7 +136,10 @@ private:
     double m_allocated_planning_time;
     DiscreteEnv m_env;
 
-    //visualization
+    // sampling
+    ompl::base::ValidStateSampler* m_stateSampler;
+
+    // visualization
     ros::NodeHandle nh;  
     ros::Publisher map_publisher;
     ros::Publisher path_publisher;

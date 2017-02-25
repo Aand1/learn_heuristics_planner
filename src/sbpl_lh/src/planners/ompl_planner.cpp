@@ -280,6 +280,7 @@ bool OMPLPlanner::initOMPL() {
     m_planner->setProblemDefinition(ompl::base::ProblemDefinitionPtr(m_pdef));
     m_planner->setup();
     m_pathSimplifier = new ompl::geometric::PathSimplifier(si);
+    m_stateSampler = new ompl::base::UniformValidStateSampler(si.get());
     ROS_INFO("finished initializing OMPL planner");
 
     if(!initViz()) {
@@ -375,7 +376,7 @@ void OMPLPlanner::printState(const ompl::base::State* state) {
         dynamic_cast<const ompl::base::SE2StateSpace::StateType*> (state);
 
 
-    ROS_INFO("State x : %f y : %f z : %f", se2_state->getX(),
+    ROS_INFO("State x : %f y : %f yaw : %f", se2_state->getX(),
                                            se2_state->getY(),
                                            se2_state->getYaw());
 }
@@ -434,4 +435,29 @@ bool OMPLPlanner::createStartGoal(SE2State& ompl_start, SE2State& ompl_goal) {
                                  ompl_goal->getYaw() );
 
     return true;
+}
+
+bool OMPLPlanner::sampleStartGoal(SE2State& ompl_start, SE2State& ompl_goal) {
+    
+    m_stateSampler->sample(ompl_start.get());
+
+    if(!m_collision_checker->isValid(ompl_start.get())) {
+        return false;
+    }
+
+    ROS_INFO("Start Valid : %f %f %f", ompl_start->getX(),
+                                 ompl_start->getY(),
+                                 ompl_start->getYaw() );
+
+    m_stateSampler->sample(ompl_goal.get());
+
+    if(!m_collision_checker->isValid(ompl_goal.get())) {
+        return false;
+    }
+
+    ROS_INFO("Goal Valid : %f %f %f", ompl_goal->getX(),
+                                 ompl_goal->getY(),
+                                 ompl_goal->getYaw() );
+
+    return true;  
 }
