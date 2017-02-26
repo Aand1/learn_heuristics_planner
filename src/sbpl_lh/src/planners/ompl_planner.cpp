@@ -371,6 +371,8 @@ bool OMPLPlanner::plan(PlanData& plan_data) {
                        ompl_goal->getY(),
                        ompl_goal->getYaw()};
 
+    normalizePlanState(pd_goal);
+
     plan_data.goal = pd_goal;
 
     m_pdef->clearGoal();
@@ -467,7 +469,17 @@ PlanState OMPLPlanner::getPlanState(const ompl::base::State* state) {
                           se2_state->getY(),
                           se2_state->getYaw()};
 
+    normalizePlanState(plan_state);
+
     return plan_state;
+}
+
+void OMPLPlanner::normalizePlanState(PlanState& plan_state) {
+    
+    plan_state.x /= (m_env.width_cells*m_env.cellsize);
+    plan_state.y /= (m_env.height_cells*m_env.cellsize);
+    plan_state.yaw = angles::normalize_angle_positive(plan_state.yaw)
+                     /(2*M_PI);
 }
 
 void OMPLPlanner::getCummPlanCost(ompl::geometric::PathGeometric& geo_path,

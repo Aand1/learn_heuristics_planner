@@ -125,6 +125,7 @@ public:
 	bool sampleStartGoal(SE2State& ompl_start, SE2State& ompl_goal);
 	void printState(const ompl::base::State* state);
 	PlanState getPlanState(const ompl::base::State* state);
+	void normalizePlanState(PlanState& plan_state);
 	void visualizeMap();
 	void visualizePath(ompl::geometric::PathGeometric& geo_path);
 	void getCummPlanCost(ompl::geometric::PathGeometric& geo_path,
