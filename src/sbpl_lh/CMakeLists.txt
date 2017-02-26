@@ -12,6 +12,9 @@ find_package( PkgConfig REQUIRED)
 find_package( ompl )
 pkg_check_modules( gsl REQUIRED gsl )
 
+pkg_search_module(Eigen3 REQUIRED eigen3)
+include_directories(${EIGEN_INCLUDE_DIRS})
+
 include_directories(${PROJECT_SOURCE_DIR}/include
                     ${ompl_INCLUDE_DIRS})
 
@@ -45,6 +48,7 @@ add_library(sbpl_ros
   src/utils/2Dgridsearch.cpp
   src/utils/config.cpp	
   src/heuristic_learner/GeneratePlans.cpp
+  src/heuristic_learner/LearnModel.cpp
   )
 target_link_libraries(sbpl_ros ${gsl_LIBRARIES} ${catkin_LIBRARIES} ${OMPL_LIBRARIES})
 
