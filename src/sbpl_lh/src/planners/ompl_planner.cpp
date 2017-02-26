@@ -347,7 +347,7 @@ bool OMPLPlanner::plan() {
     return true;
 }
 
-bool OMPLPlanner::plan(PlanData* plan_data) {
+bool OMPLPlanner::plan(PlanData& plan_data) {
     if (m_planner_id == PRM_P_NUM)
         ROS_INFO("running PRM planner!");
     if (m_planner_id == RRT_NUM)
@@ -371,6 +371,8 @@ bool OMPLPlanner::plan(PlanData* plan_data) {
                        ompl_goal->getY(),
                        ompl_goal->getYaw()};
 
+    plan_data.goal = pd_goal;
+
     m_pdef->clearGoal();
     m_pdef->clearStartStates();
     m_pdef->setStartAndGoalStates(ompl_start,ompl_goal);
@@ -381,7 +383,7 @@ bool OMPLPlanner::plan(PlanData* plan_data) {
     double t1 = ros::Time::now().toSec();
     double planning_time = t1-t0;
 
-    plan_data->plan_time = planning_time;
+    plan_data.plan_time = planning_time;
 
     ompl::base::PathPtr path = m_planner->getProblemDefinition()->getSolutionPath();
 
@@ -391,7 +393,7 @@ bool OMPLPlanner::plan(PlanData* plan_data) {
         
         ROS_INFO("OMPL Found exact solution");
 
-        plan_data->succ = true;
+        plan_data.succ = true;
 
         geo_path = static_cast<ompl::geometric::PathGeometric&>(*path);
 
@@ -399,23 +401,26 @@ bool OMPLPlanner::plan(PlanData* plan_data) {
         bool b2 = m_pathSimplifier->collapseCloseVertices(geo_path);
         bool b3 = m_pathSimplifier->shortcutPath(geo_path);
 
+        plan_data.path.resize(geo_path.getStateCount() - 1);
+        plan_data.cost.resize(geo_path.getStateCount() - 1);
+
         for(unsigned int i = 0; i < geo_path.getStateCount(); i++){
             ompl::base::State* state = geo_path.getState(i);
             printState(state);
             // Dont push back goal into plan_data path
             if(i != geo_path.getStateCount() - 1) {   
                 PlanState plan_state = getPlanState(state);
-                (plan_data->path).push_back(plan_state);
+                (plan_data.path)[i] = (plan_state);
             }
         }
 
-        std::vector<double> cumm_edge_cost(plan_data->path.size());
-        getCummPlanCost(geo_path, cumm_edge_cost);
+        getCummPlanCost(geo_path, plan_data.cost);
 
         visualizePath(geo_path);
     }
-
-    plan_data->succ = false;
+    else {
+        plan_data.succ = false;
+    }
 
     return true;
 }
@@ -474,7 +479,7 @@ void OMPLPlanner::getCummPlanCost(ompl::geometric::PathGeometric& geo_path,
         cost += getSE2Cost(geo_path.getState(i),
                            geo_path.getState(i+1));
         
-        cumm_edge_cost.push_back(cost);
+        cumm_edge_cost[i] = cost;
     }
 }
 

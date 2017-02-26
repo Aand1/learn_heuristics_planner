@@ -3,6 +3,7 @@ devel/*
 build/*
 install/*
 stats/*
+training_plans/
 !.gitignore
 !*.cfg
 .catkin_workspace

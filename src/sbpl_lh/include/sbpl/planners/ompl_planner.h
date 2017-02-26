@@ -22,7 +22,7 @@
 
 // SBPL includes
 #include <sbpl/headers.h>
-#include <sbpl/plan_data.h>
+#include <sbpl/heuristic_learner/plan_data.h>
 
 // ROS includes
 #include <ros/ros.h>
@@ -120,7 +120,7 @@ public:
 	bool initOMPL();
 	bool initViz();
 	bool plan();
-	bool plan(PlanData* plan_data);
+	bool plan(PlanData& plan_data);
 	bool createStartGoal(SE2State& ompl_start, SE2State& ompl_goal);
 	bool sampleStartGoal(SE2State& ompl_start, SE2State& ompl_goal);
 	void printState(const ompl::base::State* state);

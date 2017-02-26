@@ -44,6 +44,7 @@ add_library(sbpl_ros
   src/utils/utils.cpp
   src/utils/2Dgridsearch.cpp
   src/utils/config.cpp	
+  src/heuristic_learner/GeneratePlans.cpp
   )
 target_link_libraries(sbpl_ros ${gsl_LIBRARIES} ${catkin_LIBRARIES} ${OMPL_LIBRARIES})
 
@@ -62,3 +63,6 @@ target_link_libraries(test_kinematic sbpl_ros)
 
 add_executable(test_adjacency_list src/test/test_adjacency_list.cpp)
 target_link_libraries(test_adjacency_list sbpl_ros)
+
+add_executable(learn_node src/test/learn_node.cpp)
+target_link_libraries(learn_node sbpl_ros)
