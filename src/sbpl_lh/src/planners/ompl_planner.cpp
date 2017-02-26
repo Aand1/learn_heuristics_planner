@@ -245,12 +245,12 @@ bool OMPLPlanner::initOMPL() {
 	ROS_INFO("Initializing OMPL");
 
 	ompl::base::SE2StateSpace* se2 = new ompl::base::SE2StateSpace();
-    ompl::base::RealVectorBounds base_bounds(2);
-    base_bounds.setLow(0,0);
-    base_bounds.setHigh(0,10);
-    base_bounds.setLow(1,0);
-    base_bounds.setHigh(1,6);
-    se2->setBounds(base_bounds);
+    ompl::base::RealVectorBounds xy_bounds(2);
+    xy_bounds.setLow(0,0);
+    xy_bounds.setHigh(0,m_env.width_cells*m_env.cellsize);
+    xy_bounds.setLow(1,0);
+    xy_bounds.setHigh(1,m_env.height_cells*m_env.cellsize);
+    se2->setBounds(xy_bounds);
 
     m_SE2Space.reset(se2);
 
@@ -340,9 +340,82 @@ bool OMPLPlanner::plan() {
             ompl::base::State* state = geo_path.getState(i);
             printState(state);
         }
+
+        visualizePath(geo_path);
     }
 
-    visualizePath(geo_path);
+    return true;
+}
+
+bool OMPLPlanner::plan(PlanData* plan_data) {
+    if (m_planner_id == PRM_P_NUM)
+        ROS_INFO("running PRM planner!");
+    if (m_planner_id == RRT_NUM)
+        ROS_INFO("running RRT planner!");
+    if (m_planner_id == RRTSTAR_NUM || m_planner_id == RRTSTARFIRSTSOL_NUM)
+        ROS_INFO("running RRTStar planner!");
+    if (m_planner_id == RRTCONNECT_NUM)
+        ROS_INFO("running RRTConnect planner!");
+
+    m_planner->clear();
+    m_planner->getProblemDefinition()->clearSolutionPaths();
+    m_planner->as<ompl::geometric::PRM>()->clearQuery();
+
+    SE2State ompl_start(m_SE2Space);
+    SE2State ompl_goal(m_SE2Space);
+
+    if (!sampleStartGoal(ompl_start, ompl_goal))
+        return false;
+
+    PlanState pd_goal {ompl_goal->getX(),
+                       ompl_goal->getY(),
+                       ompl_goal->getYaw()};
+
+    m_pdef->clearGoal();
+    m_pdef->clearStartStates();
+    m_pdef->setStartAndGoalStates(ompl_start,ompl_goal);
+
+    double t0 = ros::Time::now().toSec();
+    ROS_INFO("Allocated planning time %f", m_allocated_planning_time);
+    ompl::base::PlannerStatus ompl_res = m_planner->solve(m_allocated_planning_time);
+    double t1 = ros::Time::now().toSec();
+    double planning_time = t1-t0;
+
+    plan_data->plan_time = planning_time;
+
+    ompl::base::PathPtr path = m_planner->getProblemDefinition()->getSolutionPath();
+
+    ompl::geometric::PathGeometric geo_path(m_si);
+
+    if (ompl_res.asString().compare("Exact solution") == 0 && path){
+        
+        ROS_INFO("OMPL Found exact solution");
+
+        plan_data->succ = true;
+
+        geo_path = static_cast<ompl::geometric::PathGeometric&>(*path);
+
+        bool b1 = m_pathSimplifier->reduceVertices(geo_path);
+        bool b2 = m_pathSimplifier->collapseCloseVertices(geo_path);
+        bool b3 = m_pathSimplifier->shortcutPath(geo_path);
+
+        for(unsigned int i = 0; i < geo_path.getStateCount(); i++){
+            ompl::base::State* state = geo_path.getState(i);
+            printState(state);
+            // Dont push back goal into plan_data path
+            if(i != geo_path.getStateCount() - 1) {   
+                PlanState plan_state = getPlanState(state);
+                (plan_data->path).push_back(plan_state);
+            }
+        }
+
+        std::vector<double> cumm_edge_cost(plan_data->path.size());
+        getCummPlanCost(geo_path, cumm_edge_cost);
+
+        visualizePath(geo_path);
+    }
+
+    plan_data->succ = false;
 
     return true;
 }
@@ -375,10 +448,34 @@ void OMPLPlanner::printState(const ompl::base::State* state) {
     const ompl::base::SE2StateSpace::StateType* se2_state = 
         dynamic_cast<const ompl::base::SE2StateSpace::StateType*> (state);
 
-
     ROS_INFO("State x : %f y : %f yaw : %f", se2_state->getX(),
-                                           se2_state->getY(),
-                                           se2_state->getYaw());
+                                             se2_state->getY(),
+                                             se2_state->getYaw());
+}
+
+PlanState OMPLPlanner::getPlanState(const ompl::base::State* state) {
+    
+    const ompl::base::SE2StateSpace::StateType* se2_state = 
+        dynamic_cast<const ompl::base::SE2StateSpace::StateType*> (state);
+
+    PlanState plan_state {se2_state->getX(),
+                          se2_state->getY(),
+                          se2_state->getYaw()};
+
+    return plan_state;
+}
+
+void OMPLPlanner::getCummPlanCost(ompl::geometric::PathGeometric& geo_path,
+                                  std::vector<double>& cumm_edge_cost) {
+
+    double cost = 0.0;
+
+    for(int i = geo_path.getStateCount()-2; i >=0; --i) {
+        cost += getSE2Cost(geo_path.getState(i),
+                           geo_path.getState(i+1));
+        
+        cumm_edge_cost.push_back(cost);
+    }
 }
 
 void OMPLPlanner::visualizeMap() {  
@@ -460,4 +557,30 @@ bool OMPLPlanner::sampleStartGoal(SE2State& ompl_start, SE2State& ompl_goal) {
                                  ompl_goal->getYaw() );
 
     return true;  
+}
+
+double OMPLPlanner::getSE2Cost(const ompl::base::State* state1,
+                               const ompl::base::State* state2) {
+
+    double cost;
+
+    const ompl::base::SE2StateSpace::StateType* se2_state1 = 
+           dynamic_cast<const ompl::base::SE2StateSpace::StateType*> (state1);
+
+    const ompl::base::SE2StateSpace::StateType* se2_state2 = 
+           dynamic_cast<const ompl::base::SE2StateSpace::StateType*> (state2);
+
+    cost = (se2_state2->getX() - se2_state1->getX())*
+           (se2_state2->getX() - se2_state1->getX())
+           +
+           (se2_state2->getY() - se2_state1->getY())*
+           (se2_state2->getY() - se2_state1->getY());
+
+    cost = sqrt(cost);
+
+    // probably remove the weight?
+    cost += 0.5 * angles::shortest_angular_distance(se2_state2->getYaw(),
+                                                    se2_state1->getYaw());
+
+    return cost;
 }

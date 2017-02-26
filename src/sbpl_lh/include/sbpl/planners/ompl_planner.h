@@ -22,6 +22,7 @@
 
 // SBPL includes
 #include <sbpl/headers.h>
+#include <sbpl/plan_data.h>
 
 // ROS includes
 #include <ros/ros.h>
@@ -119,11 +120,18 @@ public:
 	bool initOMPL();
 	bool initViz();
 	bool plan();
+	bool plan(PlanData* plan_data);
 	bool createStartGoal(SE2State& ompl_start, SE2State& ompl_goal);
 	bool sampleStartGoal(SE2State& ompl_start, SE2State& ompl_goal);
 	void printState(const ompl::base::State* state);
+	PlanState getPlanState(const ompl::base::State* state);
 	void visualizeMap();
 	void visualizePath(ompl::geometric::PathGeometric& geo_path);
+	void getCummPlanCost(ompl::geometric::PathGeometric& geo_path,
+                         std::vector<double>& cumm_edge_cost);
+
+	double getSE2Cost(const ompl::base::State* state1,
+                                   const ompl::base::State* state2);
 
 private:
     ompl::base::SpaceInformationPtr m_si;
