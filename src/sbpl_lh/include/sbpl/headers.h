@@ -73,6 +73,7 @@
 #include <sbpl/utils/sbpl_bfs_3d.h>
 #include <sbpl/utils/utils.h>
 #include <sbpl/heuristic_learner/GeneratePlans.h>
+#include <sbpl/heuristic_learner/LearnModel.h>
 #include <sbpl/heuristic_learner/plan_data.h>
 #endif
 

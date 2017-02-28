@@ -1,6 +1,6 @@
 #include <sbpl/heuristic_learner/LearnModel.h>
 
-LearnModel::LearnModel(std::vector<PlanData> training_data,
+LearnModel::LearnModel(std::vector<PlanData>& training_data,
 					   double alpha, int model_num) :
 m_training_data(training_data),
 m_alpha(alpha),
@@ -70,4 +70,9 @@ void LearnModel::vfApprox() {
 
 Eigen::MatrixXd LearnModel::getTheta() {
 	return m_theta;
+}
+
+void LearnModel::printTheta() {
+	std::cout << "Theta : " << std::endl;
+	std::cout << m_theta << std::endl;
 }

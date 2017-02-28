@@ -25,7 +25,7 @@ enum MathModel {
 
 class LearnModel {
 public:
-	LearnModel(std::vector<PlanData> training_data,
+	LearnModel(std::vector<PlanData>& training_data,
 			   double alpha = 0.01, int model_num = 0);
 	~LearnModel();
 	void initTheta();
@@ -37,6 +37,7 @@ public:
 								     const PlanState& g);
 	void vfApprox();
 	Eigen::MatrixXd getTheta();
+	void printTheta();
 
 private:
 	std::vector<PlanData> m_training_data;

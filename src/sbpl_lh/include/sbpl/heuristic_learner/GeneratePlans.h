@@ -20,7 +20,7 @@ public:
 				  const char* envCfgFilename = NULL);
 	~GeneratePlans();
 	void runSetup();
-	std::vector<PlanData> getFullPlanData();
+	std::vector<PlanData>& getFullPlanData();
 	void writePlansToFile(std::string folder = "training_plans");
 
 private:

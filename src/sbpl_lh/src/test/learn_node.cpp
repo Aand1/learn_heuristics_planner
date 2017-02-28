@@ -7,15 +7,17 @@
 
 #include <sbpl/headers.h>
 
-void generateTraningData(int num_plans, double time_per_plan,
+void generateTraningModel(int num_plans, double time_per_plan,
                          int planner_id, const char* envCfgFilename) {
 
     GeneratePlans plan_generator(num_plans, planner_id,
                                  time_per_plan, envCfgFilename);
-
     plan_generator.runSetup();
+    std::vector<PlanData>& pd = plan_generator.getFullPlanData();
 
-    plan_generator.writePlansToFile();
+    LearnModel lm(pd, 0.01, 0);
+    lm.vfApprox();
+    lm.printTheta();
 }
 
 int main(int argc, char *argv[])
@@ -41,7 +43,7 @@ int main(int argc, char *argv[])
     std::string config_path = lib_path + r_config_path; 
     std::string prim_path = lib_path + r_prim_path; 
     
-    generateTraningData(num_plans, time_per_plan,
+    generateTraningModel(num_plans, time_per_plan,
                         planner_id, config_path.c_str());
 
     return 0;        

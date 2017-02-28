@@ -49,7 +49,7 @@ void GeneratePlans::runSetup() {
 	}
 }
 
-std::vector<PlanData> GeneratePlans::getFullPlanData() {
+std::vector<PlanData>& GeneratePlans::getFullPlanData() {
 	return m_training_data;
 }
 
