@@ -18,6 +18,8 @@ include_directories(${EIGEN_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/include
                     ${ompl_INCLUDE_DIRS})
 
+link_directories(/usr/local/lib)
+
 catkin_package(
   CATKIN_DEPENDS roscpp roslib
   DEPENDS gsl ompl
@@ -50,7 +52,7 @@ add_library(sbpl_ros
   src/heuristic_learner/GeneratePlans.cpp
   src/heuristic_learner/LearnModel.cpp
   )
-target_link_libraries(sbpl_ros ${gsl_LIBRARIES} ${catkin_LIBRARIES} ${OMPL_LIBRARIES})
+target_link_libraries(sbpl_ros ${gsl_LIBRARIES} ${catkin_LIBRARIES} ${OMPL_LIBRARIES} fann)
 
 # Download needed data file
 # download_test_data(http://pr.willowgarage.com/data/sbpl/env_examples/nav2d/willow-25mm-inflated-env.cfg 
