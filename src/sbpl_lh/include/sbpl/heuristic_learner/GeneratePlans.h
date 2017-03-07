@@ -22,6 +22,7 @@ public:
 	void runSetup();
 	std::vector<PlanData>& getFullPlanData();
 	void writePlansToFile(std::string folder = "training_plans");
+	void writePlansToFannData(std::string folder = "training_plans");
 
 private:
 	int m_num_plans;

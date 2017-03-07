@@ -596,8 +596,9 @@ double OMPLPlanner::getSE2Cost(const ompl::base::State* state1,
     cost = sqrt(cost);
 
     // probably remove the weight?
-    cost += 0.5 * angles::shortest_angular_distance(se2_state2->getYaw(),
-                                                    se2_state1->getYaw());
+    cost += 0.5 * fabs(angles::shortest_angular_distance(se2_state2->getYaw(),
+                                                         se2_state1->getYaw()) 
+                                                        );
 
     return cost;
 }

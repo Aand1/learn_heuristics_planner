@@ -3,6 +3,9 @@
 #include <vector>
 #include <fstream>
 
+#define INPUT_FEATURE_SIZE 6
+#define OUTPUT_SIZE 1
+
 typedef struct {
 
 	double x;

@@ -1,78 +1,69 @@
 #include <sbpl/heuristic_learner/LearnModel.h>
 
-LearnModel::LearnModel(std::vector<PlanData>& training_data,
-					   double alpha, int model_num) :
-m_training_data(training_data),
-m_alpha(alpha),
-m_model_num(model_num) {
-	initTheta();
+LearnModel::LearnModel()
+{
+	std::string folder = setupFolder("training_plans");
+
+	m_tdata_file = folder + "SE2_train.data";
+	m_net_file = folder + "SE2.net";
 }
 
 LearnModel::~LearnModel() {
-	m_training_data.clear();
+
 }
 
-void LearnModel::initTheta() {
-	// hardcode feature size for now
-	m_theta = Eigen::MatrixXd::Zero(1, FEATURE_SIZE);
-}
-
-void LearnModel::updateTheta(const Eigen::MatrixXd& del_theta) {
-	m_theta += m_alpha*del_theta;
-}
-
-Eigen::MatrixXd LearnModel::getMathModel(const Eigen::MatrixXd& feature) {
-	
-	if(m_model_num == MathModel::Linear) {
-		return m_theta*feature;
-	}	
-}
-
-Eigen::MatrixXd LearnModel::getMathModelGradient
-				(const Eigen::MatrixXd& feature) {
-	
-	if(m_model_num == MathModel::Linear) {
-		return feature;
-	}
-}
-
-Eigen::MatrixXd LearnModel::getFeatureVector(const PlanState& s, 
-											 const PlanState& g) {
-	
-	Eigen::MatrixXd feature = Eigen::MatrixXd::Zero(FEATURE_SIZE, 1);
-
-	feature(0,0) = s.x;
-	feature(1,0) = s.y;
-	feature(2,0) = s.yaw;
-	feature(3,0) = g.x;
-	feature(4,0) = g.y;
-	feature(5,0) = g.yaw;
-
-	return feature;
+std::string LearnModel::setupFolder(std::string folder) {
+	return ros::package::getPath("sbpl_lh") +
+					   	   "/" + 
+					       folder +
+					       "/";
 }
 
 void LearnModel::vfApprox() {
 
-	for(int i = 0; i < m_training_data.size(); ++i) {
-		
-		for(int j = 0; j < m_training_data[i].path.size(); ++j) {
-			Eigen::MatrixXd f = getFeatureVector(m_training_data[i].path[j],
-												 m_training_data[i].goal);
+	const float learning_rate = 0.4f;
+    const unsigned int num_input = INPUT_FEATURE_SIZE;
+    const unsigned int num_output = OUTPUT_SIZE;
+    const unsigned int num_layers = 4;
+    const unsigned int num_neurons_hidden = 10;
+    const float desired_error = (const float) 0.1;
+    const unsigned int max_epochs = 500000;
+    const unsigned int epochs_between_reports = 1000;
 
-			Eigen::MatrixXd del_theta = (m_training_data[i].cost[j] - 
-										 getMathModel(f)(0,0))*
-										 getMathModelGradient(f);
+    FANN::neural_net net;
+    net.create_standard(num_layers, num_input, num_neurons_hidden, 
+    					num_neurons_hidden, num_output);
 
-			updateTheta(del_theta);
-		}
-	}
+    net.set_learning_rate(learning_rate);
+
+    net.set_activation_steepness_hidden(0.5);
+    net.set_activation_steepness_output(0.5);
+
+    net.set_activation_function_layer(FANN::SIGMOID, 1);
+    net.set_activation_function_layer(FANN::GAUSSIAN, 2);
+    net.set_activation_function_output(FANN::LINEAR);
+
+    // net.set_training_algorithm(FANN::TRAIN_BATCH);
+
+    net.print_parameters();
+
+    FANN::training_data data;
+    if (data.read_train_from_file(m_tdata_file))
+    {
+    	data.shuffle_train_data();
+
+        fann_type **train_dat;
+        fann_type **out_dat;
+        train_dat = data.get_input();
+        out_dat = data.get_output();
+
+        // Initialize and train the network with the data
+        net.init_weights(data);
+
+        net.train_on_data(data, max_epochs,
+        				  epochs_between_reports, desired_error);
+
+        net.save(m_net_file);
+    }
 }
 
-Eigen::MatrixXd LearnModel::getTheta() {
-	return m_theta;
-}
-
-void LearnModel::printTheta() {
-	std::cout << "Theta : " << std::endl;
-	std::cout << m_theta << std::endl;
-}

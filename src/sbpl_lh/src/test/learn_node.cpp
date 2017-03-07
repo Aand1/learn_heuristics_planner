@@ -13,11 +13,10 @@ void generateTraningModel(int num_plans, double time_per_plan,
     GeneratePlans plan_generator(num_plans, planner_id,
                                  time_per_plan, envCfgFilename);
     plan_generator.runSetup();
-    std::vector<PlanData>& pd = plan_generator.getFullPlanData();
+    plan_generator.writePlansToFannData();
 
-    LearnModel lm(pd, 0.01, 0);
+    LearnModel lm;
     lm.vfApprox();
-    lm.printTheta();
 }
 
 int main(int argc, char *argv[])

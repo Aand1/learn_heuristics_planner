@@ -16,32 +16,21 @@
 // Eigen includes
 #include <eigen3/Eigen/Geometry> 
 
-#define FEATURE_SIZE 6
-
-enum MathModel {
-	Linear = 0,
-	Exponential
-};
+// Fann includes
+#include <doublefann.h>
+#include <fann_cpp.h>
 
 class LearnModel {
 public:
-	LearnModel(std::vector<PlanData>& training_data,
-			   double alpha = 0.01, int model_num = 0);
+	LearnModel();
 	~LearnModel();
-	void initTheta();
-	void updateTheta(const Eigen::MatrixXd& del_theta);
-	Eigen::MatrixXd getMathModel(const Eigen::MatrixXd& feature);
-	Eigen::MatrixXd getMathModelGradient(const Eigen::MatrixXd& 
-										 feature);
-	Eigen::MatrixXd getFeatureVector(const PlanState& s, 
-								     const PlanState& g);
+	std::string setupFolder(std::string folder);
 	void vfApprox();
-	Eigen::MatrixXd getTheta();
-	void printTheta();
+	// int printCallback(FANN::neural_net &net, FANN::training_data &train,
+    //unsigned int max_epochs, unsigned int epochs_between_reports,
+    //float desired_error, unsigned int epochs, void *user_data);
 
 private:
-	std::vector<PlanData> m_training_data;
-    Eigen::MatrixXd m_theta;
-    double m_alpha;
-    int m_model_num;
+    std::string m_tdata_file;
+    std::string m_net_file;
 };
