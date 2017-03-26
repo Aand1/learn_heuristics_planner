@@ -33,4 +33,5 @@ public:
 private:
     std::string m_tdata_file;
     std::string m_net_file;
+    std::string m_test_file;
 };

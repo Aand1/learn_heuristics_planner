@@ -10,10 +10,10 @@
 void generateTraningModel(int num_plans, double time_per_plan,
                          int planner_id, const char* envCfgFilename) {
 
-    GeneratePlans plan_generator(num_plans, planner_id,
-                                 time_per_plan, envCfgFilename);
-    plan_generator.runSetup();
-    plan_generator.writePlansToFannData();
+    // GeneratePlans plan_generator(num_plans, planner_id,
+    //                              time_per_plan, envCfgFilename);
+    // plan_generator.runSetup();
+    // plan_generator.writePlansToFannData();
 
     LearnModel lm;
     lm.vfApprox();

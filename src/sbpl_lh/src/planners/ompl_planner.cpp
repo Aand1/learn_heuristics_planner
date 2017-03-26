@@ -565,6 +565,10 @@ bool OMPLPlanner::sampleStartGoal(SE2State& ompl_start, SE2State& ompl_goal) {
 
     m_stateSampler->sample(ompl_goal.get());
 
+    // ompl_goal->setX(2.9);
+    // ompl_goal->setY(1.5);
+    // ompl_goal->setYaw(0.0);
+
     if(!m_collision_checker->isValid(ompl_goal.get())) {
         return false;
     }

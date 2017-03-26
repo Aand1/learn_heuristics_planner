@@ -99,7 +99,7 @@ void GeneratePlans::writePlansToFannData(std::string folder) {
 						   "/" + 
 						   folder +
 						   "/";
-	std::string filename = "SE2_train.data";
+	std::string filename = "SE2_train_2.data";
 	std::string full_path = lib_path + filename;
 
 	// open file
