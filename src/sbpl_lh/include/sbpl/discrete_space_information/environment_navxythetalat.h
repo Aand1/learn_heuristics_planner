@@ -35,9 +35,13 @@
 #include <sbpl/discrete_space_information/environment.h>
 #include <sbpl/utils/utils.h>
 
+#include <random>
+
+#include <sbpl/heuristic_learner/plan_data.h>
 
 // ROS includes
 #include <ros/ros.h>
+#include <angles/angles.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Path.h>
 #include <visualization_msgs/Marker.h>
@@ -424,6 +428,8 @@ public:
     virtual void VisualizeExpansions(int x, int y) { }
     virtual void VisualizePath(std::vector<int> solution_state_ids) { }
 
+    virtual bool SampleRandomStartGoal();
+
 protected:
     virtual int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAVXYTHETALATAction_t* action);
 
@@ -622,6 +628,12 @@ public:
     virtual void VisualizeMap();
     virtual void VisualizeExpansions(int x, int y);
     virtual void VisualizePath(std::vector<int> solution_state_ids);
+
+    virtual double getSE2Cost(double x, double y, double theta,
+                      double nx, double ny, double ntheta);
+    virtual void normalizePlanState(PlanState& plan_state);
+    virtual void computePlanningData(PlanData& plan_data,
+                        std::vector<int> solution_state_ids);
 
 protected:
     //hash table of size x_size*y_size. Maps from coords to stateId

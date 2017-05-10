@@ -8,15 +8,14 @@
 #include <sbpl/headers.h>
 
 void generateTraningModel(int num_plans, double time_per_plan,
-                         int planner_id, const char* envCfgFilename) {
+                         int planner_id, const char* envCfgFilename,
+                         const char* motPrimFilename) {
 
-    // GeneratePlans plan_generator(num_plans, planner_id,
-    //                              time_per_plan, envCfgFilename);
-    // plan_generator.runSetup();
-    // plan_generator.writePlansToFannData();
-
-    LearnModel lm;
-    lm.vfApprox();
+    GeneratePlans plan_generator(num_plans, planner_id,
+                                 time_per_plan, envCfgFilename,
+                                 motPrimFilename);
+    plan_generator.runSetup();
+    plan_generator.writePlansToFile();
 }
 
 int main(int argc, char *argv[])
@@ -36,14 +35,15 @@ int main(int argc, char *argv[])
     ph.getParam("num_plans", num_plans);
     ph.getParam("time_per_plan", time_per_plan);
     ph.getParam("use_ompl", use_ompl);
-    ph.getParam("ompl_id", planner_id);
+    ph.getParam("planner_id", planner_id);
 
     std::string lib_path = ros::package::getPath("sbpl_lh");
     std::string config_path = lib_path + r_config_path; 
     std::string prim_path = lib_path + r_prim_path; 
     
     generateTraningModel(num_plans, time_per_plan,
-                        planner_id, config_path.c_str());
+                        planner_id, config_path.c_str(),
+                        prim_path.c_str());
 
     return 0;        
 }

@@ -17,7 +17,8 @@ class GeneratePlans {
 public:
 	GeneratePlans(int num_plans, int planner_mode,
 				  double time_per_plan,
-				  const char* envCfgFilename = NULL);
+				  const char* envCfgFilename = NULL,
+				  const char* motPrimFilename = NULL);
 	~GeneratePlans();
 	void runSetup();
 	std::vector<PlanData>& getFullPlanData();
@@ -29,6 +30,7 @@ private:
 	int m_planner_mode;
 	double m_time_per_plan;
 	const char* m_config_file;
+	const char* m_mprim_file;
 
 	std::vector<PlanData> m_training_data;
 };

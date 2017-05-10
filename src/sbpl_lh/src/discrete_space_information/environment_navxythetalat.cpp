@@ -466,6 +466,67 @@ void EnvironmentNAVXYTHETALATTICE::ReadConfiguration(FILE* fCfg)
         }
 }
 
+bool EnvironmentNAVXYTHETALATTICE::SampleRandomStartGoal() {
+
+    double x_bound = EnvNAVXYTHETALATCfg.EnvWidth_c * EnvNAVXYTHETALATCfg.cellsize_m;
+    double y_bound = EnvNAVXYTHETALATCfg.EnvHeight_c * EnvNAVXYTHETALATCfg.cellsize_m;
+    double th_bound = 2*M_PI;
+
+    double x, y, theta;
+
+    std::uniform_real_distribution<double> x_unif(0, x_bound);
+    std::uniform_real_distribution<double> y_unif(0, y_bound);
+    std::uniform_real_distribution<double> th_unif(0, th_bound);
+    
+    std::random_device rand_dev;
+    std::mt19937 rand_engine(rand_dev());
+
+    bool succ_sample = false;
+
+    while (!succ_sample) {
+
+        // sample start
+        x = x_unif(rand_engine);
+        y = y_unif(rand_engine);
+        theta = th_unif(rand_engine);
+
+        EnvNAVXYTHETALATCfg.StartX_c = CONTXY2DISC(x, EnvNAVXYTHETALATCfg.cellsize_m);
+        EnvNAVXYTHETALATCfg.StartY_c = CONTXY2DISC(y, EnvNAVXYTHETALATCfg.cellsize_m);
+        EnvNAVXYTHETALATCfg.StartTheta = ContTheta2Disc(theta, EnvNAVXYTHETALATCfg.NumThetaDirs);
+
+        if(!IsValidConfiguration(EnvNAVXYTHETALATCfg.StartX_c, 
+                                 EnvNAVXYTHETALATCfg.StartY_c,
+                                 EnvNAVXYTHETALATCfg.StartTheta) ) {
+            continue;
+        }
+        succ_sample = true;
+    }
+
+    succ_sample = false;
+
+    while (!succ_sample) {
+
+        // sample goal
+        x = x_unif(rand_engine);
+        y = y_unif(rand_engine);
+        theta = th_unif(rand_engine);
+
+        EnvNAVXYTHETALATCfg.EndX_c = CONTXY2DISC(x, EnvNAVXYTHETALATCfg.cellsize_m);
+        EnvNAVXYTHETALATCfg.EndY_c = CONTXY2DISC(y, EnvNAVXYTHETALATCfg.cellsize_m);
+        EnvNAVXYTHETALATCfg.EndTheta = ContTheta2Disc(theta, EnvNAVXYTHETALATCfg.NumThetaDirs);
+
+        if(!IsValidConfiguration(EnvNAVXYTHETALATCfg.EndX_c, 
+                                 EnvNAVXYTHETALATCfg.EndY_c,
+                                 EnvNAVXYTHETALATCfg.EndTheta) ) {
+            continue;
+        }
+
+        succ_sample = true;
+    }
+
+    return succ_sample;
+}
+
 bool EnvironmentNAVXYTHETALATTICE::ReadinCell(sbpl_xy_theta_cell_t* cell, FILE* fIn)
 {
     char sTemp[60];
@@ -1559,6 +1620,9 @@ bool EnvironmentNAVXYTHETALATTICE::InitializeEnv(const char* sEnvFile, const vec
     ReadConfiguration(fCfg);
     fclose(fCfg);
 
+    // sample random start and goal
+    SampleRandomStartGoal();
+
     if (sMotPrimFile != NULL) {
         FILE* fMotPrim = fopen(sMotPrimFile, "r");
         if (fMotPrim == NULL) {
@@ -1917,6 +1981,88 @@ int EnvironmentNAVXYTHETALATTICE::GetEnvParameter(const char* parameter)
         SBPL_ERROR("ERROR: invalid parameter %s\n", parameter);
         throw new SBPL_Exception();
     }
+}
+
+double EnvironmentNAVXYTHETALAT::getSE2Cost(double x, double y, double theta,
+                                          double nx, double ny, double ntheta) {
+
+    double cost = ((nx - x)*(nx - x) + (ny - y)*(ny - y));
+
+    cost = sqrt(cost);
+
+    cost += 0.5 * fabs(angles::shortest_angular_distance(ntheta,
+                                                         theta));    
+
+    return cost;
+}
+
+void EnvironmentNAVXYTHETALAT::normalizePlanState(PlanState& plan_state) {
+    plan_state.x /= (EnvNAVXYTHETALATCfg.EnvWidth_c*EnvNAVXYTHETALATCfg.cellsize_m);
+    plan_state.y /= (EnvNAVXYTHETALATCfg.EnvHeight_c*EnvNAVXYTHETALATCfg.cellsize_m);
+    plan_state.yaw /= (2*M_PI);
+}
+
+void EnvironmentNAVXYTHETALAT::computePlanningData(PlanData& plan_data,
+                               std::vector<int> solution_state_ids) {
+
+    plan_data.path.resize(solution_state_ids.size() - 1);
+    plan_data.cost.resize(solution_state_ids.size() - 1);
+
+    double cum_plan_cost = 0.0;
+    for(int sid = solution_state_ids.size() - 2; sid >= 0; --sid) {
+        int x, y, theta;
+        GetCoordFromState(solution_state_ids[sid], x, y, theta);
+
+        double cont_x, cont_y, cont_theta;
+        cont_x = DISCXY2CONT(x, EnvNAVXYTHETALATCfg.cellsize_m);
+        cont_y = DISCXY2CONT(y, EnvNAVXYTHETALATCfg.cellsize_m);
+        cont_theta = normalizeAngle(DiscTheta2Cont(theta, 
+                     EnvNAVXYTHETALATCfg.NumThetaDirs));
+
+        GetCoordFromState(solution_state_ids[sid+1], x, y, theta);
+
+        double cont_nx, cont_ny, cont_ntheta;
+        cont_nx = DISCXY2CONT(x, EnvNAVXYTHETALATCfg.cellsize_m);
+        cont_ny = DISCXY2CONT(y, EnvNAVXYTHETALATCfg.cellsize_m);
+        cont_ntheta = normalizeAngle(DiscTheta2Cont(theta, 
+                     EnvNAVXYTHETALATCfg.NumThetaDirs));
+
+        cum_plan_cost += getSE2Cost(cont_x, cont_y, cont_theta,
+                                    cont_nx, cont_ny, cont_ntheta);
+
+        plan_data.cost[sid] = cum_plan_cost;
+    }
+
+    for(int sid = 0; sid < solution_state_ids.size(); ++sid) {
+        int x, y, theta;
+        GetCoordFromState(solution_state_ids[sid], x, y, theta);
+
+        double cont_x, cont_y, cont_theta;
+        cont_x = DISCXY2CONT(x, EnvNAVXYTHETALATCfg.cellsize_m);
+        cont_y = DISCXY2CONT(y, EnvNAVXYTHETALATCfg.cellsize_m);
+        cont_theta = normalizeAngle(DiscTheta2Cont(theta, 
+                     EnvNAVXYTHETALATCfg.NumThetaDirs));
+
+        if(sid == solution_state_ids.size() - 1) {
+
+            PlanState pd_goal {cont_x,
+                               cont_y,
+                               cont_theta};
+
+            normalizePlanState(pd_goal);
+
+            plan_data.goal = pd_goal;
+            
+            continue;
+        }
+
+        plan_data.path[sid].x = cont_x;
+        plan_data.path[sid].y = cont_y;
+        plan_data.path[sid].yaw = cont_theta;
+
+        normalizePlanState(plan_data.path[sid]);
+    }
+
 }
 
 /*****************************************************************
